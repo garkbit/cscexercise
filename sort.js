@@ -1,20 +1,14 @@
-// NOTE: While I went through the trouble of addressing
-// orphan nodes, I didn't address circular dependencies,
-// which would be equally fatal. Further, this sorts things
-// into an "optimal" order only in the sense that data
-// integrity constraints aren't violated. A truly optimal
-// order would likely alphabetize by category name, and be
-// further sorted by parent/child relationships, like this:
-//
-// parent1
-// |-child1
-//   |-grandchild1.1
-//   |-grandchild1.2
-// |-child2
-//   |-grandchild2.1
-//
+// NOTE: I provided two different sorting approaches, one
+// that merely satisfies the data integrity constraints,
+// and one that sorts things in a way humans might wish
+// to have a dependency graph such as this presented.
+// They take fundamentally different approaches, and are
+// probably both worth glancing at.
 
-module.exports = function sortCategoriesForInsert(inputJson) {
+// This only satisfies the data integrity constraints
+// without taking into account how a human might wish
+// to parse a dependency graph.
+const sortCategoriesForInsert = (inputJson) => {
     
     // While this adds extra overhead, it's what keeps
     // the function pure, otherwise we'd be silently mutating
@@ -55,3 +49,44 @@ module.exports = function sortCategoriesForInsert(inputJson) {
     }
     return sorted;
 }
+
+// This handles the same cases as above (though
+// without printing an error for orphan nodes),
+// but sorts things as you would an alphabetized
+// outline, e.g.:
+//
+// - Parent A
+//   |- Child A
+//      |- Grandchild A
+//      |- Grandchild B
+//   |- Child B
+// - Parent B
+//
+const sortCategoriesForInsertPrettily = (inputJson) => {
+    
+    const getOrderedChildren = (parent_id) => {
+        
+        const children = inputJson
+            .filter(c => c.parent_id === parent_id)
+            .sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
+        
+        if (children.length > 0) {
+            for (let i = 0; i < children.length; i++) {
+                
+                // Recursion FTW!
+                const gChildren = getOrderedChildren(children[i].id);
+                
+                // Insert children...
+                children.splice(i + 1, 0, ...gChildren);
+                
+                // Offset iterator
+                i = i + gChildren.length;
+            }
+        }
+        return children;
+    };
+    
+    return getOrderedChildren(null);
+}
+
+module.exports = sortCategoriesForInsert;
