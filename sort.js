@@ -1,3 +1,19 @@
+// NOTE: While I went through the trouble of addressing
+// orphan nodes, I didn't address circular dependencies,
+// which would be equally fatal. Further, this sorts things
+// into an "optimal" order only in the sense that data
+// integrity constraints aren't violated. A truly optimal
+// order would likely alphabetize by category name, and be
+// further sorted by parent/child relationships, like this:
+//
+// parent1
+// |-child1
+//   |-grandchild1.1
+//   |-grandchild1.2
+// |-child2
+//   |-grandchild2.1
+//
+
 module.exports = function sortCategoriesForInsert(inputJson) {
     
     // While this adds extra overhead, it's what keeps
